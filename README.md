@@ -8,34 +8,47 @@ An open-source integration bridge and suite of agent skills for **Monday.com**, 
 
 - **Enterprise & Corporate Support**: Works seamlessly with corporate custom subdomains (e.g. `company.monday.com`) using standard personal access tokens OR browser session tokens (`jwt_session_token`).
 - **Token Manager CLI**: Simple commands to verify token validity, detect session expiry (401), and update tokens on the fly without restarting agent processes.
-- **84+ Comprehensive Tools**: Direct access to all official Monday MCP capabilities (boards, items, subitems, columns, updates, attachments, automations, and custom GraphQL queries).
-- **Turnkey Agent Skills (SDLC / Project Lifecycle)**: Bundled with 13 ready-to-use agent runbooks following corporate standards (without emojis and adhering to standard `[PREFIX][SUB-PREFIX] Title` conventions).
+- **Pure-Python & Zero-Node Architecture**: 100% self-contained stdio JSON-RPC MCP server (`src/mcp_server.py`) and pre-implemented GraphQL client (`src/client.py`) with zero Node.js/npm dependencies.
+- **Turnkey Agent Skills**: Bundled with 19 ready-to-use agent runbooks following corporate standards (zero emojis, strict SDLC governance, subtask breakdown, bug reporting, and board scaffolding).
+- **One-Liner Agent Installation**: Turnkey setup prompt for autonomous AI agent harnesses with comprehensive safety reference docs.
 
+---
+
+## 🤖 One-Liner AI Agent Installation Prompt
+
+Copy and paste this single prompt directly to your AI coding agent (Claude Code, Oh My Pi / Antigravity, Cursor, Windsurf):
+
+```text
+Install and integrate monday-mcp-unofficial: clone https://github.com/wicahma/monday-mcp-unofficial.git to ~/.omp/monday-mcp-unofficial, install python requests, register the MCP server in your harness mcp.json (command: "python3", args: ["<EXPANDED_HOME>/.omp/monday-mcp-unofficial/src/runner.py"]), copy or symlink skills/ to your active agent skills directory, and run `python3 src/token_manager.py check` to verify authentication.
+```
+
+> 📖 For full security safeguards, token hygiene, and platform-specific configurations, see the **[Safe AI Agent Installation Reference Guide](docs/AGENT_INSTALL.md)**.
 ---
 
 ## Project Structure
 
 ```text
 monday-mcp-unofficial/
+├── docs/
+│   └── AGENT_INSTALL.md   # Secure AI agent installation reference guide
 ├── src/
+│   ├── client.py          # Pre-implemented Monday GraphQL API client & CLI
+│   ├── mcp_server.py      # Self-contained Python stdio MCP server
 │   ├── runner.py          # Universal MCP execution runner
+│   ├── skill_tester.py    # 1-by-1 skill testing and validation harness
 │   └── token_manager.py   # Token health check & update CLI
-├── skills/                # 13 agent skills for Monday.com
+├── skills/                # 19 turnkey agent runbooks
 │   ├── monday-workflow/
 │   ├── monday-reply-comment/
-│   ├── monday-stage-project-registration/
-│   ├── monday-stage-user-requirements/
-│   ├── monday-stage-document-completeness/
-│   ├── monday-stage-design/
-│   ├── monday-stage-development/
-│   ├── monday-stage-sit/
-│   ├── monday-stage-uat/
-│   ├── monday-stage-sync-test/
-│   ├── monday-stage-dvr/
-│   ├── monday-stage-implementation/
-│   └── monday-stage-pir/
+│   ├── monday-subtask-breakdown/
+│   ├── monday-bug-report/
+│   ├── monday-card-transition/
+│   ├── monday-progress-digest/
+│   ├── monday-board-scaffold/
+│   ├── monday-attach-evidence/
+│   └── monday-stage-*     # 11 SDLC stage runbooks (registration to PIR)
+├── tests/                 # Full unit test suite (15 unit tests)
 └── README.md
-```
 
 ---
 
