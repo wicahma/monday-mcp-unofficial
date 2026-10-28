@@ -13,17 +13,15 @@ An open-source integration bridge and suite of agent skills for **Monday.com**, 
 - **One-Liner Agent Installation**: Turnkey setup prompt for autonomous AI agent harnesses with comprehensive safety reference docs.
 
 ---
+## One-Liner AI Agent Installation Prompt
 
-## 🤖 One-Liner AI Agent Installation Prompt
-
-Copy and paste this single prompt directly to your AI coding agent (Claude Code, Oh My Pi / Antigravity, Cursor, Windsurf):
+Copy and paste this directive directly to your AI coding agent (Claude Code, Cursor, Windsurf, Claude Desktop, Antigravity, or any MCP client):
 
 ```text
-Install and integrate monday-mcp-unofficial: clone https://github.com/wicahma/monday-mcp-unofficial.git to ~/.omp/monday-mcp-unofficial, install python requests, register the MCP server in your harness mcp.json (command: "python3", args: ["<EXPANDED_HOME>/.omp/monday-mcp-unofficial/src/runner.py"]), copy or symlink skills/ to your active agent skills directory, and run `python3 src/token_manager.py check` to verify authentication.
+Install and integrate monday-mcp-unofficial: clone https://github.com/wicahma/monday-mcp-unofficial.git to your local MCP directory, install python requests, register the MCP server in your agent harness configuration (command: "python3", args: ["<ABSOLUTE_PATH_TO_REPO>/src/runner.py"]), link skills/ into your active agent skills directory, and run python3 src/token_manager.py check to verify connectivity.
 ```
 
-> 📖 For full security safeguards, token hygiene, and platform-specific configurations, see the **[Safe AI Agent Installation Reference Guide](docs/AGENT_INSTALL.md)**.
----
+> For complete security safeguards, token hygiene, and platform-specific configurations, see the **[Safe AI Agent Installation Reference Guide](docs/AGENT_INSTALL.md)**.
 
 ## Project Structure
 
@@ -54,16 +52,16 @@ monday-mcp-unofficial/
 
 ## Step-by-Step Installation Guide
 
-Follow these steps to set up and connect Monday MCP to your AI coding agent (Claude Code, Cursor, Antigravity, Oh My Pi / omp, Windsurf).
+Follow these steps to set up and connect Monday MCP to your preferred AI coding assistant or agent harness.
 
 ### Step 1: Prerequisites
-Ensure you have the following installed on your machine:
+Ensure you have the following installed:
 - **Python**: Version 3.10 or higher (`python --version`)
 - **Git**: (`git --version`)
-*(Note: Node.js / npm is no longer required! The MCP server is now 100% self-contained in Python).*
+*(Note: Node.js and npm are not required. The MCP server is self-contained in Python).*
 
 ### Step 2: Clone the Repository
-Clone this repository to your local directory:
+Clone this repository to your local machine:
 ```bash
 git clone https://github.com/wicahma/monday-mcp-unofficial.git
 cd monday-mcp-unofficial
@@ -73,24 +71,26 @@ cd monday-mcp-unofficial
 ```bash
 pip install requests
 ```
+
 ### Step 4: Obtain Your Monday Token
 
 #### Method A: Official Personal API Token (If you have developer access)
-1. Go to your avatar at the top right of Monday.com.
-2. Navigate to **Developers** ➔ **My Access Tokens**.
+1. Click on your profile avatar in Monday.com.
+2. Navigate to Developers -> My Access Tokens.
 3. Copy your Personal API Token.
 
 #### Method B: Browser Session Token (For Enterprise Subdomains without Admin rights)
-If your organization disables Developer Tokens:
-1. Open your browser and log in to your corporate Monday subdomain (e.g., `https://your-company.monday.com`).
-2. Open DevTools (`F12`) and navigate to the **Application** tab (or **Storage** in Firefox) ➔ **Cookies**.
-3. Find and copy the value of the cookie named **`jwt_session_token`** (starts with `eyJ...`).
+If developer tokens are restricted by your organization:
+1. Open your browser and log in to your corporate Monday subdomain (e.g. `https://your-company.monday.com`).
+2. Open DevTools (`F12`) and go to the Application tab (or Storage in Firefox) -> Cookies.
+3. Copy the value of the cookie named `jwt_session_token` (starts with `eyJ...`).
 
 ### Step 5: Save and Verify the Token
-Run the included token manager CLI to store and verify your token:
+Store and verify your token using the CLI:
 ```bash
 python src/token_manager.py update "<PASTE_YOUR_TOKEN_HERE>"
 ```
+*(Note: You can override the token storage path by setting the `MONDAY_TOKEN_CONFIG_PATH` environment variable).*
 
 Expected output:
 ```text
@@ -100,40 +100,101 @@ Token updated successfully in ~/.omp/monday_token.json
 
 ---
 
-## Connecting to Your AI Assistant / IDE
+## Granular Harness Integration
 
-### 1. Oh My Pi / Antigravity / Claude Code (`mcp.json` or `config.yml`)
-Add the following entry to your MCP configuration file:
+Add the server configuration to your AI agent or editor harness:
 
-#### For `mcp.json` / Claude Desktop / Cursor:
+### 1. Claude Code CLI
+```bash
+claude mcp add monday -- python3 /ABSOLUTE/PATH/TO/monday-mcp-unofficial/src/runner.py
+```
+Or in project `.mcp.json`:
 ```json
 {
   "mcpServers": {
     "monday": {
-      "command": "python",
+      "command": "python3",
       "args": [
-        "/path/to/monday-mcp-unofficial/src/runner.py"
+        "/ABSOLUTE/PATH/TO/monday-mcp-unofficial/src/runner.py"
       ]
     }
   }
 }
 ```
 
-*Note for Windows users:* Use double backslashes in paths, e.g. `"C:\\path\\to\\monday-mcp-unofficial\\src\\runner.py"`.
+### 2. Cursor IDE (`.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "monday": {
+      "command": "python3",
+      "args": [
+        "/ABSOLUTE/PATH/TO/monday-mcp-unofficial/src/runner.py"
+      ]
+    }
+  }
+}
+```
 
-#### For YAML-based configurations (`config.yml`):
+### 3. Windsurf IDE (`~/.codeium/windsurf/mcp_config.json`)
+```json
+{
+  "mcpServers": {
+    "monday": {
+      "command": "python3",
+      "args": [
+        "/ABSOLUTE/PATH/TO/monday-mcp-unofficial/src/runner.py"
+      ]
+    }
+  }
+}
+```
+
+### 4. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "monday": {
+      "command": "python3",
+      "args": [
+        "/ABSOLUTE/PATH/TO/monday-mcp-unofficial/src/runner.py"
+      ]
+    }
+  }
+}
+```
+
+### 5. Antigravity / Oh My Pi (`~/.omp/agent/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "monday": {
+      "command": "python3",
+      "args": [
+        "/ABSOLUTE/PATH/TO/monday-mcp-unofficial/src/runner.py"
+      ]
+    }
+  }
+}
+```
+
+### 6. YAML Configurations (`config.yml`)
 ```yaml
 mcpServers:
   monday:
-    command: python
+    command: python3
     args:
-      - /path/to/monday-mcp-unofficial/src/runner.py
+      - /ABSOLUTE/PATH/TO/monday-mcp-unofficial/src/runner.py
 ```
 
-### 2. Restart Your Agent
-Restart your terminal, Claude Code, or IDE window. The `monday` tools will be automatically loaded into your agent's toolset.
-
 ---
+
+## Granular Skill Deployment Options
+
+Deploy the 19 included agent runbooks according to your platform:
+- **Cursor**: Copy relevant skills from `skills/` to `.cursor/rules/`
+- **Claude Code**: Copy skills to `~/.claude/skills/` or project `.claude/skills/`
+- **Universal Agent Workspaces**: Symlink or copy to `~/.agents/skills/`
 
 ## How to Handle Expired Tokens
 
