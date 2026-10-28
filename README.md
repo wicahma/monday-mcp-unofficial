@@ -45,9 +45,9 @@ Follow these steps to set up and connect Monday MCP to your AI coding agent (Cla
 
 ### Step 1: Prerequisites
 Ensure you have the following installed on your machine:
-- **Node.js**: Version 20 or higher (`node -v`)
 - **Python**: Version 3.10 or higher (`python --version`)
 - **Git**: (`git --version`)
+*(Note: Node.js / npm is no longer required! The MCP server is now 100% self-contained in Python).*
 
 ### Step 2: Clone the Repository
 Clone this repository to your local directory:
@@ -56,16 +56,10 @@ git clone https://github.com/wicahma/monday-mcp-unofficial.git
 cd monday-mcp-unofficial
 ```
 
-### Step 3: Install Required Dependencies
-1. Install Python dependencies:
-   ```bash
-   pip install requests
-   ```
-2. Install the core official Monday MCP server globally:
-   ```bash
-   npm install -g @mondaydotcomorg/monday-api-mcp
-   ```
-
+### Step 3: Install Python Dependencies
+```bash
+pip install requests
+```
 ### Step 4: Obtain Your Monday Token
 
 #### Method A: Official Personal API Token (If you have developer access)
@@ -141,13 +135,61 @@ Since browser session tokens have an expiration period, you can easily renew the
 
 ---
 
-## Included Agent Skills
+## Pre-implemented Python GraphQL API Client (`src/client.py`)
 
-The `skills/` directory contains complete guidelines for AI agents:
+In addition to MCP integration, this repository includes a robust, pre-implemented Python client (`src/client.py`) that encapsulates Monday.com API v2 queries and mutations—eliminating the need to manually construct GraphQL strings.
 
-1. **`monday-workflow`**: General runbook for querying boards, searching items, and crafting custom GraphQL queries.
-2. **`monday-reply-comment`**: Workflow for posting professional comments, acknowledging tasks, and replying to existing threads with parent IDs.
-3. **`monday-stage-*` (11 SDLC Stages)**:
+### Python Usage Example
+```python
+from src.client import MondayClient
+
+client = MondayClient() # Automatically loads token from environment or ~/.omp/monday_token.json
+
+# 1. Get current user
+me = client.get_me()
+print(me)
+
+# 2. List boards
+boards = client.get_boards(limit=5)
+
+# 3. Create an item
+item = client.create_item(board_id="5032042833", group_id="new_group29179", item_name="New Feature Task")
+
+# 4. Post an update / comment
+client.post_update(item_id=item["id"], body="Task initiated.")
+```
+
+### CLI Usage
+```bash
+# View current user profile
+python src/client.py me
+
+# List accessible boards
+python src/client.py boards --limit 10
+
+# Get board schema (columns & groups)
+python src/client.py schema 5032042833
+
+# Create an item
+python src/client.py create-item 5032042833 "My Task Title" --group new_group29179
+```
+
+---
+
+
+The `skills/` directory contains 19 turnkey runbooks for AI agents:
+
+1. **Core Workflows & Discussions**:
+   - `monday-workflow`: Querying boards, item searching, and custom GraphQL API operations.
+   - `monday-reply-comment`: Structured thread updates, acknowledging tasks, and replying with parent IDs.
+   - `monday-subtask-breakdown`: Decomposing parent features and epics into technical subitems.
+   - `monday-bug-report`: Standardized defect tracking with severity (P1-P4), reproduction steps, and stack traces.
+   - `monday-card-transition`: Automating stage status transitions, moving items between groups, and posting handover notes.
+   - `monday-attach-evidence`: Uploading test reports, coverage HTML, and screenshots directly to card updates.
+   - `monday-progress-digest`: Compiling standup digests, completed tasks, and flagging stuck blockers.
+   - `monday-board-scaffold`: 1-click scaffolding of full SDLC boards pre-configured with all 11 lifecycle groups.
+
+2. **SDLC Governance Stages (`monday-stage-*`)**:
    - `monday-stage-project-registration`
    - `monday-stage-user-requirements`
    - `monday-stage-document-completeness`
@@ -161,6 +203,45 @@ The `skills/` directory contains complete guidelines for AI agents:
    - `monday-stage-pir`
 
 Copy these folders into your agent's skills directory (e.g., `~/.agents/skills/` or `.cursor/rules/`) to enable standardized, corporate-ready workflows.
+---
+
+## Testing & Enhancing Agent Skills (`src/skill_tester.py`)
+
+To test, validate, and iteratively enhance the 19 agent skills, use the built-in skill test harness:
+
+### 1. List Available Skills
+```bash
+python src/skill_tester.py --list
+```
+
+### 2. Test Skills One by One
+Test individual skills with frontmatter and payload validation:
+```bash
+# Test development stage skill
+python src/skill_tester.py monday-stage-development
+
+# Test comment / discussion skill
+python src/skill_tester.py monday-reply-comment
+
+# Test design stage skill
+python src/skill_tester.py monday-stage-design
+```
+
+### 3. Test Live Against Real Monday.com Board
+Add the `--live` flag to run verification against your connected Monday workspace:
+```bash
+python src/skill_tester.py monday-workflow --live
+python src/skill_tester.py monday-stage-development --live --board-id 5032042833
+```
+
+### 4. Run Full Skill Test Suite
+```bash
+# Via skill_tester CLI:
+python src/skill_tester.py all
+
+# Or via standard Python unittest:
+python -m unittest tests/test_skills.py
+```
 
 ---
 
