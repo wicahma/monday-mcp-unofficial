@@ -39,37 +39,66 @@ monday-mcp-unofficial/
 
 ---
 
-## Installation & Setup
+## Step-by-Step Installation Guide
 
-### 1. Prerequisites
-- Node.js (v20+)
-- Python (3.10+)
-- Install the core MCP server globally:
-  ```bash
-  npm install -g @mondaydotcomorg/monday-api-mcp
-  ```
+Follow these steps to set up and connect Monday MCP to your AI coding agent (Claude Code, Cursor, Antigravity, Oh My Pi / omp, Windsurf).
 
-### 2. Configure Your Token
-You can provide your token via environment variable or through the configuration file.
+### Step 1: Prerequisites
+Ensure you have the following installed on your machine:
+- **Node.js**: Version 20 or higher (`node -v`)
+- **Python**: Version 3.10 or higher (`python --version`)
+- **Git**: (`git --version`)
 
-#### Option A: CLI / Token Manager
+### Step 2: Clone the Repository
+Clone this repository to your local directory:
 ```bash
-python src/token_manager.py update "<YOUR_MONDAY_TOKEN>"
+git clone https://github.com/wicahma/monday-mcp-unofficial.git
+cd monday-mcp-unofficial
 ```
 
-#### Option B: Environment Variable
+### Step 3: Install Required Dependencies
+1. Install Python dependencies:
+   ```bash
+   pip install requests
+   ```
+2. Install the core official Monday MCP server globally:
+   ```bash
+   npm install -g @mondaydotcomorg/monday-api-mcp
+   ```
+
+### Step 4: Obtain Your Monday Token
+
+#### Method A: Official Personal API Token (If you have developer access)
+1. Go to your avatar at the top right of Monday.com.
+2. Navigate to **Developers** ➔ **My Access Tokens**.
+3. Copy your Personal API Token.
+
+#### Method B: Browser Session Token (For Enterprise Subdomains without Admin rights)
+If your organization disables Developer Tokens:
+1. Open your browser and log in to your corporate Monday subdomain (e.g., `https://your-company.monday.com`).
+2. Open DevTools (`F12`) and navigate to the **Application** tab (or **Storage** in Firefox) ➔ **Cookies**.
+3. Find and copy the value of the cookie named **`jwt_session_token`** (starts with `eyJ...`).
+
+### Step 5: Save and Verify the Token
+Run the included token manager CLI to store and verify your token:
 ```bash
-export MONDAY_API_TOKEN="<YOUR_MONDAY_TOKEN>"
+python src/token_manager.py update "<PASTE_YOUR_TOKEN_HERE>"
 ```
 
-*Note for restricted enterprise accounts:* If you do not have Admin access to generate a Personal Access Token from the Developer menu, log in to your company Monday subdomain in your browser, open DevTools (`F12`), and copy the `jwt_session_token` cookie value.
+Expected output:
+```text
+[AUTH_OK] Successfully connected as: Your Name (your.email@company.com) - ID: 12345678
+Token updated successfully in ~/.omp/monday_token.json
+```
 
 ---
 
-## Connecting to Your AI Agent (Claude, Cursor, Antigravity, omp)
+## Connecting to Your AI Assistant / IDE
 
-Add the server to your MCP configuration file (e.g., `mcp.json` or `config.yml`):
+### 1. Oh My Pi / Antigravity / Claude Code (`mcp.json` or `config.yml`)
+Add the following entry to your MCP configuration file:
 
+#### For `mcp.json` / Claude Desktop / Cursor:
 ```json
 {
   "mcpServers": {
@@ -77,14 +106,38 @@ Add the server to your MCP configuration file (e.g., `mcp.json` or `config.yml`)
       "command": "python",
       "args": [
         "/path/to/monday-mcp-unofficial/src/runner.py"
-      ],
-      "env": {
-        "MONDAY_API_TOKEN": "<OPTIONAL_OR_USE_CONFIG_FILE>"
-      }
+      ]
     }
   }
 }
 ```
+
+*Note for Windows users:* Use double backslashes in paths, e.g. `"C:\\path\\to\\monday-mcp-unofficial\\src\\runner.py"`.
+
+#### For YAML-based configurations (`config.yml`):
+```yaml
+mcpServers:
+  monday:
+    command: python
+    args:
+      - /path/to/monday-mcp-unofficial/src/runner.py
+```
+
+### 2. Restart Your Agent
+Restart your terminal, Claude Code, or IDE window. The `monday` tools will be automatically loaded into your agent's toolset.
+
+---
+
+## How to Handle Expired Tokens
+
+Since browser session tokens have an expiration period, you can easily renew the token without touching your IDE or MCP configuration:
+
+1. Copy the fresh `jwt_session_token` from your browser.
+2. Run:
+   ```bash
+   python src/token_manager.py update "<NEW_TOKEN_VALUE>"
+   ```
+3. The runner reads the new token immediately on the next tool execution.
 
 ---
 
@@ -106,6 +159,8 @@ The `skills/` directory contains complete guidelines for AI agents:
    - `monday-stage-dvr`
    - `monday-stage-implementation`
    - `monday-stage-pir`
+
+Copy these folders into your agent's skills directory (e.g., `~/.agents/skills/` or `.cursor/rules/`) to enable standardized, corporate-ready workflows.
 
 ---
 
