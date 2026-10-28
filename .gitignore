@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+monday_token.json
+.DS_Store
+Thumbs.db
