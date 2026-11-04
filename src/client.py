@@ -768,23 +768,15 @@ class MondayClient:
         content_type = content_type or 'application/octet-stream'
 
         query = "mutation ($file: File!, $updateId: ID!) { add_file_to_update (update_id: $updateId, file: $file) { id name url } }"
-        operations = {
-            "query": query,
-            "variables": {
-                "updateId": str(update_id),
-                "file": None
-            }
-        }
-        map_data = {"image": ["variables.file"]}
-
         # Read into memory (size is capped by check_upload_path) so a 429 retry resends
         # the whole file rather than an exhausted file handle.
         with open(file_path, 'rb') as f:
             content = f.read()
         files = {
-            'operations': (None, json.dumps(operations)),
-            'map': (None, json.dumps(map_data)),
-            'image': (filename, content, content_type)
+            # Monday's /v2/file takes `query` + `variables[...]` fields, not the GraphQL multipart spec.
+            'query': (None, query),
+            'variables[updateId]': (None, str(update_id)),
+            'variables[file]': (filename, content, content_type)
         }
         # Uploads are mutations: retried on 429 only, never on 5xx.
         response = self._post(
@@ -805,10 +797,19 @@ class MondayClient:
             raise MondayClientError(
                 f"Malformed JSON response from upload (HTTP {response.status_code}): {response.text[:500]}"
             ) from e
-        if 'errors' in data and data['errors']:
-            raise MondayAPIError(f"Upload failed: {data['errors'][0].get('message')}", errors=data['errors'])
-
-        return data.get('data', {}).get('add_file_to_update', {})
+        if not isinstance(data, dict):
+            raise MondayClientError(f"Unexpected upload response (HTTP {response.status_code}): {response.text[:500]}")
+        if data.get('errors'):
+            raise MondayAPIError(f"Upload failed: {data['errors'][0].get('message')}", errors=data['errors'],
+                                 status_code=response.status_code)
+        if response.status_code >= 400:
+            raise MondayAPIError(f"Upload failed: HTTP {response.status_code}: {response.text[:500]}",
+                                 status_code=response.status_code)
+        payload = (data.get('data') or {}).get('add_file_to_update')
+        if not isinstance(payload, dict) or not payload.get('id'):
+            raise MondayAPIError(f"Upload failed: no file returned (HTTP {response.status_code}): {response.text[:500]}",
+                                 status_code=response.status_code)
+        return payload
 
     # ---------------------------------------------------------
     # SDLC Lifecycle Stage Helper

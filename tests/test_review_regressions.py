@@ -286,7 +286,7 @@ class TestSecondReviewFixes(unittest.TestCase):
             sent = []
 
             def fake_post(url, **kw):
-                sent.append(kw["files"]["image"][1])
+                sent.append(kw["files"]["variables[file]"][1])
                 return [limited, ok][len(sent) - 1]
 
             with patch("requests.post", side_effect=fake_post), patch("time.sleep"):
@@ -305,6 +305,35 @@ class TestSecondReviewFixes(unittest.TestCase):
                 with self.assertRaises(Exception):
                     client.upload_file_to_update("1", path)
             self.assertEqual(mp.call_count, 1)
+
+    def test_upload_failures_are_not_reported_as_success(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = os.path.realpath(d)
+            path = os.path.join(d, "report.txt")
+            open(path, "w").close()
+            client = MondayClient(token="t", upload_allowed_dirs=[d])
+            for status, body in [(502, {"message": "bad gateway"}), (400, {"error_message": "x"}),
+                                 (200, {"data": {}}), (200, {"data": {"add_file_to_update": None}}), (200, [])]:
+                with self.subTest(status=status, body=body):
+                    resp = MagicMock(status_code=status, headers={}, text=str(body))
+                    resp.json.return_value = body
+                    with patch("requests.post", return_value=resp), patch("time.sleep"):
+                        with self.assertRaises(Exception):
+                            client.upload_file_to_update("1", path)
+
+    def test_upload_uses_monday_form_fields(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = os.path.realpath(d)
+            path = os.path.join(d, "report.txt")
+            open(path, "w").close()
+            client = MondayClient(token="t", upload_allowed_dirs=[d])
+            ok = MagicMock(status_code=200, headers={})
+            ok.json.return_value = {"data": {"add_file_to_update": {"id": "f1"}}}
+            with patch("requests.post", return_value=ok) as mp:
+                client.upload_file_to_update("42", path)
+            files = mp.call_args.kwargs["files"]
+            self.assertEqual(set(files), {"query", "variables[updateId]", "variables[file]"})
+            self.assertEqual(files["variables[updateId]"][1], "42")
 
     # --- upload policy -----------------------------------------------------
     def test_sensitive_dirs_case_insensitive(self):
