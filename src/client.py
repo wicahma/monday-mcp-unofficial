@@ -117,7 +117,8 @@ def is_read_only_graphql(query: str) -> bool:
 # Never upload these, wherever they live.
 SENSITIVE_DIR_NAMES = {
     # credentials / key stores
-    '.ssh', '.gnupg', '.aws', '.azure', '.kube', '.docker', '.password-store', '.omp',
+    '.ssh', '.gnupg', '.aws', '.azure', '.kube', '.docker', '.omp',
+    '.password-store',  # ggignore: directory name of the `pass` password manager, not a secret
     'gcloud', '.gcloud', 'keyrings', '.terraform.d', '.vault', '.ansible', '.cargo',
     # app config and browser profiles (gh tokens, cookies, saved logins, ...)
     '.config', '.mozilla', '.thunderbird', '.pki', '.local',
