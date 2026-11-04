@@ -223,6 +223,7 @@ class TestMCPProtocol(unittest.TestCase):
         self.assertTrue(by["all_api_read"]["annotations"]["readOnlyHint"])
         self.assertTrue(by["delete_item"]["annotations"]["destructiveHint"])
         self.assertTrue(by["all_api_write"]["annotations"]["destructiveHint"])
+        self.assertTrue(by["add_file_to_update"]["annotations"]["destructiveHint"])
 
     def test_all_api_read_refuses_mutation(self):
         with patch("requests.post") as mock_post:

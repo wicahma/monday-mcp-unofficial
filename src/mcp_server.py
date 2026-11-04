@@ -206,7 +206,7 @@ TOOLS: List[Dict[str, Any]] = [
             "properties": {"update_id": _s("Update ID"), "file_path": _s("Path to a local file")},
             "required": ["update_id", "file_path"],
         },
-        "annotations": {"title": "Attach file to update", **WRITE},
+        "annotations": {"title": "Attach file to update", **DESTRUCTIVE},
     },
     {
         "name": "all_api_read",
