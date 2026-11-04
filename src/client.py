@@ -118,6 +118,7 @@ def is_read_only_graphql(query: str) -> bool:
 SENSITIVE_DIR_NAMES = {
     # credentials / key stores
     '.ssh', '.gnupg', '.aws', '.azure', '.kube', '.docker', '.omp',
+    'secrets', '.secrets', 'creds',
     '.password-store',  # ggignore: directory name of the `pass` password manager, not a secret
     'gcloud', '.gcloud', 'keyrings', '.terraform.d', '.vault', '.ansible', '.cargo',
     # app config and browser profiles (gh tokens, cookies, saved logins, ...)
@@ -127,7 +128,7 @@ SENSITIVE_DIR_NAMES = {
 }
 SENSITIVE_FILE_PATTERNS = [
     # env / keys / certificates
-    '.env', '.env.*', '*.env', '*.pem', '*.key', '*.p12', '*.pfx', '*.jks', '*.keystore',
+    '.env', '.env.*', '*.env', '.envrc', 'dotenv', '*.pem', '*.pem.*', '*.key', '*.key.*', '*.p12', '*.pfx', '*.jks', '*.keystore',
     '*.ppk', '*.ovpn', '*.gpg', '*.kdbx', '*.kdb', '*.age',
     'id_rsa*', 'id_dsa*', 'id_ecdsa*', 'id_ed25519*', 'authorized_keys', 'known_hosts',
     # tool credential files
@@ -135,12 +136,27 @@ SENSITIVE_FILE_PATTERNS = [
     '.boto', '.dockercfg', '.terraformrc', 'terraform.rc', '.vault-token', '.htpasswd',
     '.git-credentials', 'hosts.yml', 'kubeconfig*', '*.kubeconfig',
     '*.tfstate', '*.tfstate.*', '*.tfvars', 'service-account*.json', '*serviceaccount*.json',
-    'credentials', 'credentials.*', '*token*.json', '*secret*',
+    'credentials', 'credentials.*', '*_credentials', '*-credentials', 'creds', 'creds.*',
+    'password', 'passwords', 'passwords.*', '*token*.json', '*secret*',
     # browser stores and shell history
     'cookies', 'cookies.sqlite', 'login data', 'logins.json', 'key4.db',
     '.bash_history', '.zsh_history', '*_history', 'shadow', 'passwd',
 ]
 DEFAULT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+# Default-deny by extension: unknown names (prod.yaml, database.sql, backups, no extension)
+# are refused instead of relying on the deny-list above to recognise every secret.
+# shortcut: no content inspection, a secret saved as notes.txt still uploads; add sniffing if needed.
+DEFAULT_UPLOAD_EXTENSIONS = {
+    '.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.txt', '.log', '.md', '.csv',
+    '.xlsx', '.xls', '.docx', '.doc', '.pptx', '.ppt', '.mp4', '.mov',
+}
+
+
+def _allowed_upload_extensions() -> Set[str]:
+    env = os.environ.get('MONDAY_UPLOAD_ALLOWED_EXTENSIONS', '').strip()
+    if not env:
+        return DEFAULT_UPLOAD_EXTENSIONS
+    return {('.' + e.strip().lower().lstrip('.')) for e in env.split(',') if e.strip()}
 
 
 def _is_too_broad(directory: str) -> bool:
@@ -211,6 +227,12 @@ def check_upload_path(file_path: str, allowed_dirs: Optional[Iterable[str]] = No
         raise UploadNotAllowedError(f"Upload refused: {os.path.basename(real)} looks like a secret or credential file.")
     if os.path.realpath(CONFIG_PATH).lower() == real.lower():
         raise UploadNotAllowedError("Upload refused: that is the Monday token file.")
+    ext = os.path.splitext(name)[1]
+    if ext not in _allowed_upload_extensions():
+        raise UploadNotAllowedError(
+            f"Upload refused: '{ext or 'no extension'}' files are not on the upload allow-list. "
+            "Set MONDAY_UPLOAD_ALLOWED_EXTENSIONS (comma-separated, e.g. .pdf,.png,.json) to change it."
+        )
 
     if not os.path.exists(real):
         raise FileNotFoundError(f"File not found: {file_path}")

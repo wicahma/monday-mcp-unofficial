@@ -17,6 +17,7 @@ Standardized skill to upload local files (test logs, screenshots, reports) to ca
 
 ## Upload Restrictions (enforced by the server)
 - The file must be inside `MONDAY_UPLOAD_ALLOWED_DIRS` (default: the server's working directory, normally the project).
+- Only allow-listed extensions upload (pdf, images, txt, log, md, csv, Office files, mp4/mov by default). Archives, `.sql`, `.json` and `.yaml` are refused unless the user sets `MONDAY_UPLOAD_ALLOWED_EXTENSIONS`.
 - Credential-like files (`.env`, `*.pem`, `*.key`, SSH keys, token files, anything under `.ssh`, `.aws`, `.git`, ...) are always refused.
 - Default size limit 50 MB (`MONDAY_UPLOAD_MAX_BYTES`).
 

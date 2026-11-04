@@ -8,7 +8,7 @@ An open-source integration bridge and suite of agent skills for **Monday.com**, 
 
 - **Enterprise & Corporate Support**: Works seamlessly with corporate custom subdomains (e.g. `company.monday.com`) using standard personal access tokens OR browser session tokens (`jwt_session_token`).
 - **Token Manager CLI**: Verify token validity, detect session expiry (401), and update tokens (hidden prompt, `0600` file) without restarting agent processes.
-- **Safety guards**: `all_api_read` refuses mutations, file uploads are restricted to allow-listed directories and refuse credential files, and every tool carries MCP `readOnlyHint` / `destructiveHint` annotations.
+- **Safety guards**: `all_api_read` refuses mutations, file uploads are restricted to allow-listed directories and file types and refuse credential files, and every tool carries MCP `readOnlyHint` / `destructiveHint` annotations.
 - **Pure-Python & Zero-Node Architecture**: 100% self-contained stdio JSON-RPC MCP server (`src/mcp_server.py`) and pre-implemented GraphQL client (`src/client.py`) with zero Node.js/npm dependencies.
 - **Turnkey Agent Skills**: Bundled with 19 ready-to-use agent runbooks following corporate standards (zero emojis, strict SDLC governance, subtask breakdown, bug reporting, and board scaffolding).
 - **One-Liner Agent Installation**: Turnkey setup prompt for autonomous AI agent harnesses with comprehensive safety reference docs.
@@ -223,11 +223,12 @@ Since browser session tokens have an expiration period, you can easily renew the
 | `MONDAY_API_TOKEN` | unset | Token from the environment; takes priority over the token file. |
 | `MONDAY_TOKEN_CONFIG_PATH` | `~/.omp/monday_token.json` | Token file location. |
 | `MONDAY_UPLOAD_ALLOWED_DIRS` | server working directory | `os.pathsep`-separated directories `add_file_to_update` may read from. If unset and the working directory is `/`, your home directory, or a parent of it (Claude Desktop and some IDEs start servers there), uploads are refused until you set it. Those broad locations are refused when set explicitly too. |
+| `MONDAY_UPLOAD_ALLOWED_EXTENSIONS` | pdf, png, jpg, jpeg, gif, webp, txt, log, md, csv, xlsx, xls, docx, doc, pptx, ppt, mp4, mov | Comma-separated file extensions `add_file_to_update` may upload; setting it replaces the default list. Other extensions (e.g. `.yaml`, `.sql`, `.json`, archives, no extension) are refused. |
 | `MONDAY_UPLOAD_MAX_BYTES` | `52428800` (50 MB) | Upload size limit. |
 
 Built-in guards:
 - `all_api_read` only accepts GraphQL documents that contain query operations; any mutation or subscription is refused. Use `all_api_write` for mutations.
-- `add_file_to_update` resolves symlinks, refuses paths outside the allowed directories, and always refuses credential-like files (`.env`, `*.pem`, `*.key`, `*.kdbx`, SSH keys, `.pgpass`, kubeconfigs, Terraform state, token files, anything under `.ssh`, `.aws`, `.config`, `.mozilla`, `.git`, `.omp`, ...).
+- `add_file_to_update` resolves symlinks, refuses paths outside the allowed directories, only uploads allow-listed file extensions (see `MONDAY_UPLOAD_ALLOWED_EXTENSIONS`; archives, `.sql`, `.json` and `.yaml` are off by default because they can hide secrets), and always refuses credential-like files (`.env`, `*.pem`, `*.key`, `*.kdbx`, SSH keys, `.pgpass`, kubeconfigs, Terraform state, token files, anything under `.ssh`, `.aws`, `.config`, `.mozilla`, `.git`, `.omp`, ...).
 - Rate-limited requests (HTTP 429) are retried, waiting at most about 10 seconds in total so the server stays responsive. Server errors (5xx) are retried only for read-only queries, so a mutation is never sent twice.
 - The stdio transport expects one JSON-RPC message per line, as the MCP spec requires. A malformed line gets a parse-error response and is discarded; it never affects the next message or stops the server.
 - Tools declare MCP annotations (`readOnlyHint`, `destructiveHint`) so clients can auto-approve reads and prompt for `delete_item` / `all_api_write`.

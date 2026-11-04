@@ -369,6 +369,41 @@ class TestSecondReviewFixes(unittest.TestCase):
                     with self.assertRaises(UploadNotAllowedError):
                         check_upload_path(p, [d])
 
+    def test_credential_lookalikes_refused_but_normal_files_allowed(self):
+        refused = ["id.key.bak", "server.pem.bak", "creds.json", "aws_credentials", "passwords.txt",
+                   ".envrc", "dotenv", "secrets/a.txt", "creds/a.txt"]
+        allowed = ["reset_password_test_report.pdf", "report.txt", "credit_report.pdf", "keyboard.png"]
+        with tempfile.TemporaryDirectory() as d:
+            d = os.path.realpath(d)
+            for rel in refused + allowed:
+                p = os.path.join(d, rel)
+                os.makedirs(os.path.dirname(p), exist_ok=True)
+                open(p, "w").close()
+                with self.subTest(rel=rel):
+                    if rel in refused:
+                        with self.assertRaises(UploadNotAllowedError):
+                            check_upload_path(p, [d])
+                    else:
+                        check_upload_path(p, [d])
+
+    def test_unknown_extensions_refused_by_default_and_configurable(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = os.path.realpath(d)
+            for rel in ["prod.yaml", "database.sql", "backup.tar.gz", "config.json", "Makefile"]:
+                p = os.path.join(d, rel)
+                open(p, "w").close()
+                with self.subTest(rel=rel), self.assertRaises(UploadNotAllowedError):
+                    check_upload_path(p, [d])
+            for rel in ["report.PDF", "evidence.png"]:
+                p = os.path.join(d, rel)
+                open(p, "w").close()
+                with self.subTest(rel=rel):
+                    check_upload_path(p, [d])
+            with patch.dict(os.environ, {"MONDAY_UPLOAD_ALLOWED_EXTENSIONS": "json, .YAML"}):
+                check_upload_path(os.path.join(d, "config.json"), [d])
+                with self.assertRaises(UploadNotAllowedError):
+                    check_upload_path(os.path.join(d, "evidence.png"), [d])
+
     def test_explicit_broad_dirs_refused(self):
         home = os.path.expanduser("~")
         for value in [os.path.abspath(os.sep), home, "~"]:
