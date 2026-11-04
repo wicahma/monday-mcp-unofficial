@@ -7,7 +7,7 @@ description: >-
 
 # Monday Board Scaffolding Workflow
 
-Standardized skill to bootstrap a new corporate SDLC board on Monday.com (`acc-projects.monday.com`) pre-configured with all 11 standardized lifecycle groups.
+Standardized skill to bootstrap a new corporate SDLC board on Monday.com pre-configured with all 11 standardized lifecycle groups.
 
 ## Standards
 - Professional project governance structure.
@@ -27,38 +27,14 @@ Standardized skill to bootstrap a new corporate SDLC board on Monday.com (`acc-p
 
 ## Execution Procedure
 
-```python
-from src.client import MondayClient
-
-client = MondayClient()
-
-SDLC_GROUPS = [
-    "Project Registration",
-    "User Requirements",
-    "Document Completeness",
-    "Design",
-    "Development",
-    "SIT",
-    "UAT",
-    "Sync Test",
-    "DVR",
-    "Implementation",
-    "PIR"
-]
-
-def scaffold_sdlc_board(project_name: str) -> str:
-    # 1. Create base board
-    board = client.create_board(board_name=project_name, board_kind="public")
-    board_id = board["id"]
-    print(f"Created board: {board_id} - {project_name}")
-
-    # 2. Create the 11 standardized groups
-    for grp in SDLC_GROUPS:
-        client.create_group(board_id=board_id, group_name=grp)
-        print(f"  Added group: {grp}")
-
-    return board_id
-
-if __name__ == '__main__':
-    scaffold_sdlc_board("Sistem Layanan Nasabah Baru 2027")
-```
+1. Confirm the board name, visibility (`public` / `private` / `share`) and target workspace with the user. Default to `private` unless the user says otherwise.
+2. Create the board with `create_board`:
+   ```json
+   {"board_name": "Sistem Layanan Nasabah Baru 2027", "board_kind": "private", "workspace_id": "<WORKSPACE_ID>"}
+   ```
+3. Monday creates new groups at the top of the board, so create the 11 groups in **reverse** order (`PIR` first, `Project Registration` last) with `create_group`, so they display in lifecycle order:
+   ```json
+   {"board_id": "<NEW_BOARD_ID>", "group_name": "PIR"}
+   ```
+4. New boards come with a default group (for example `Group Title`). Tell the user it can be removed, and only remove it if they agree.
+5. Call `get_board_schema` on the new board and report the board ID and the group IDs.

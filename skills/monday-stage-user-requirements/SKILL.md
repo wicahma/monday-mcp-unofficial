@@ -7,7 +7,7 @@ description: >-
 
 # Monday Task Creation: User Requirements Stage
 
-Standardized skill to create User Requirements cards across any target project board on Monday.com (`acc-projects.monday.com`).
+Standardized skill to create User Requirements cards across any target project board on Monday.com.
 
 ## Standards
 - Professional, corporate tone.
@@ -26,30 +26,20 @@ Standardized skill to create User Requirements cards across any target project b
    - `dup__of_start_plan` / `end_date`: Target tanggal penyelesaian review (`YYYY-MM-DD`).
    - `text`: URL dokumentasi KMS terkait.
 
-```python
-import json, requests
-
-TOKEN = json.load(open('D:/User/.omp/monday_token.json'))['token']
-
-def create_user_requirements_card(board_id: str, group_id: str, title: str, start_plan: str, end_plan: str, doc_link: str = ""):
-    column_values = {
-        "status": {"label": "Working on it"},
-        "date4": {"date": start_plan},
-        "dup__of_start_plan": {"date": end_plan},
-        "text": doc_link
-    }
-    query = """
-    mutation ($boardId: ID!, $groupId: String!, $itemName: String!, $columnVals: JSON!) {
-      create_item (board_id: $boardId, group_id: $groupId, item_name: $itemName, column_values: $columnVals) {
-        id
-        name
-      }
-    }
-    """
-    res = requests.post(
-        "https://api.monday.com/v2",
-        json={"query": query, "variables": {"boardId": str(board_id), "groupId": str(group_id), "itemName": title, "columnVals": json.dumps(column_values)}},
-        headers={"Authorization": TOKEN, "Content-Type": "application/json"}
-    )
-    return res.json()
-```
+3. **Create the card** with the `create_item` MCP tool:
+   ```json
+   {
+     "board_id": "<BOARD_ID>",
+     "group_id": "<GROUP_ID resolved in step 1>",
+     "item_name": "<Card title>",
+     "column_values": {
+       "status": {"label": "Working on it"},
+       "date4": {"date": "YYYY-MM-DD"},
+       "dup__of_start_plan": {"date": "YYYY-MM-DD"},
+       "text": "<URL>"
+     }
+   }
+   ```
+   - The column IDs above (`status`, `date4`, `dup__of_start_plan`, `text`) are those of the reference SDLC board. Column IDs differ per board: map each field to the real ID from `get_board_schema` (match by column title and type) before calling `create_item`. Omit fields the board does not have.
+   - Status labels must already exist on the status column; do not invent new labels.
+4. **Report back** the created item ID and name to the user.

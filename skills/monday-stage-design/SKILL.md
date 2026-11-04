@@ -7,7 +7,7 @@ description: >-
 
 # Monday Task Creation: Design Stage
 
-Standardized skill to create Design cards across any target project board on Monday.com (`acc-projects.monday.com`).
+Standardized skill to create Design cards across any target project board on Monday.com.
 
 ## Standards
 - Professional, corporate tone delivered from a System Analyst (SA) perspective.
@@ -27,13 +27,27 @@ Standardized skill to create Design cards across any target project board on Mon
    - `date4` / `start_date`: Tanggal mulai pengerjaan desain (`YYYY-MM-DD`).
    - `dup__of_start_plan` / `end_date`: Target tanggal penyelesaian review desain (`YYYY-MM-DD`).
    - `text`: URL Figma, Confluence, atau dokumen KMS.
-3. **Attach SA Specification as Update**:
-   - Always post the detailed System Analyst specification (component hierarchy, visual copy, acceptance criteria, layout breakpoints) as an update to the item via `create_update`.
-4. **Attach Image / UI Mockup**:
-   - If a visual screenshot or mockup image is provided, upload it directly to the card update via `https://api.monday.com/v2/file`:
-   ```bash
-   curl -s -X POST https://api.monday.com/v2/file \
-     -H "Authorization: <TOKEN>" \
-     -F "query=mutation addFile(\$file: File!) { add_file_to_update (update_id: <UPDATE_ID>, file: \$file) { id name url } }" \
-     -F "variables[file]=@<IMAGE_PATH>;filename=<FILENAME>;type=image/png"
+3. **Create the card** with the `create_item` MCP tool:
+   ```json
+   {
+     "board_id": "<BOARD_ID>",
+     "group_id": "<GROUP_ID resolved in step 1>",
+     "item_name": "<Card title>",
+     "column_values": {
+       "status": {"label": "Working on it"},
+       "date4": {"date": "YYYY-MM-DD"},
+       "dup__of_start_plan": {"date": "YYYY-MM-DD"},
+       "text": "<URL>"
+     }
+   }
    ```
+   - The column IDs above (`status`, `date4`, `dup__of_start_plan`, `text`) are those of the reference SDLC board. Column IDs differ per board: map each field to the real ID from `get_board_schema` (match by column title and type) before calling `create_item`. Omit fields the board does not have.
+   - Status labels must already exist on the status column; do not invent new labels.
+4. **Attach SA Specification as Update**:
+   - Always post the detailed System Analyst specification (component hierarchy, visual copy, acceptance criteria, layout breakpoints) as an update to the item via `create_update` (`item_id` = the new card ID).
+5. **Attach Image / UI Mockup** (optional):
+   - If a screenshot or mockup is provided, take the update ID returned by `create_update` in step 4 and call `add_file_to_update`:
+   ```json
+   {"update_id": "<UPDATE_ID>", "file_path": "docs/mockups/login-page.png"}
+   ```
+   - The file must be inside the server's allowed upload directories (`MONDAY_UPLOAD_ALLOWED_DIRS`, default: the project directory). Credential-like files are refused.
