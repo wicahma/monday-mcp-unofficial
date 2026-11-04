@@ -197,6 +197,27 @@ class TestArgumentValidation(unittest.TestCase):
     def setUp(self):
         self.server = MondayMCPServer(client=MondayClient(token="t"))
 
+    def test_initialize_rejects_non_object_params(self):
+        for params in ["oops", [1], 5]:
+            with self.subTest(params=params):
+                r = self.server.handle_request({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": params})
+                self.assertEqual(r["error"]["code"], -32602)
+
+    def test_live_stage_test_resolves_group_by_title_and_fails_loudly(self):
+        from src.skill_tester import SkillValidator
+        schema = {"groups": [{"id": "g1", "title": "Design"}, {"id": "g2", "title": "Sync Test"}]}
+        with patch("src.skill_tester.MondayClient") as mc:
+            client = mc.return_value
+            client.token = "t"
+            client.get_board_schema.return_value = schema
+            client.create_stage_card.return_value = {"id": "9"}
+            res = SkillValidator("monday-stage-sync-test").test_live_execution("1")
+            self.assertEqual(client.create_stage_card.call_args.kwargs["group_id"], "g2")
+            self.assertEqual(res["verified_group"], "Sync Test")
+            client.get_board_schema.return_value = {"groups": [{"id": "g1", "title": "Design"}]}
+            res = SkillValidator("monday-stage-sync-test").test_live_execution("1")
+            self.assertEqual(res["status"], "FAIL")
+
     def call(self, name, args):
         return self.server.handle_request({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
                                            "params": {"name": name, "arguments": args}})["result"]

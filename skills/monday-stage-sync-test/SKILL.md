@@ -18,7 +18,7 @@ Standardized skill to create synchronization and post-sync testing cards across 
 
 1. **Resolve Board and Group**:
    - Query target board groups using `get_board_schema`.
-   - Match group titled `Synchronize & Test After Sync`.
+   - Match group titled `Sync Test`.
 2. **Column Payload Structure**:
    - `name`: Nama aktivitas sinkronisasi data (contoh: `Sinkronisasi Data Pengguna dan Pengujian Verifikasi Pasca Sinkronisasi`).
    - `status`: Status eksekusi.

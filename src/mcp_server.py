@@ -332,7 +332,10 @@ class MondayMCPServer:
             return None
 
         if method == "initialize":
-            requested = (req.get("params") or {}).get("protocolVersion")
+            params = req.get("params") or {}
+            if not isinstance(params, dict):
+                return self._err(msg_id, -32602, "params must be an object")
+            requested = params.get("protocolVersion")
             version = requested if requested in SUPPORTED_PROTOCOL_VERSIONS else SUPPORTED_PROTOCOL_VERSIONS[0]
             return self._ok(msg_id, {
                 "protocolVersion": version,

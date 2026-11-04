@@ -197,8 +197,8 @@ class SkillValidator:
                 "data": {"create_update": {"id": "up_123", "body": "Test comment"}}
             }
             with patch("requests.post", mock_post):
-                update_res = client.post_update(item_id="2886565907", body="Test update")
-                reply_res = client.reply_to_update(item_id="2886565907", parent_update_id="up_123", body="Test reply")
+                update_res = client.post_update(item_id="1234567890", body="Test update")
+                reply_res = client.reply_to_update(item_id="1234567890", parent_update_id="up_123", body="Test reply")
                 return {
                     "status": "PASS",
                     "post_update": update_res.get("id"),
@@ -317,8 +317,10 @@ class SkillValidator:
         if self.skill_name in STAGE_SKILLS_CONFIG:
             cfg = STAGE_SKILLS_CONFIG[self.skill_name]
             schema = client.get_board_schema(board_id)
-            groups = schema.get("groups", [])
-            target_group_id = groups[0]["id"] if groups else ""
+            group = next((g for g in schema.get("groups", []) if g.get("title") == cfg["group"]), None)
+            if not group:
+                return {"status": "FAIL", "error": f"Group '{cfg['group']}' not found on board {board_id}"}
+            target_group_id = group["id"]
 
             # Create live card
             title = f"[TEST][{self.skill_name.replace('monday-stage-', '').upper()}] Automated Skill Test Card"
@@ -340,7 +342,8 @@ class SkillValidator:
             return {
                 "status": "PASS",
                 "live_card_id": item_id,
-                "verified_group": target_group_id,
+                "verified_group": cfg["group"],
+                "group_id": target_group_id,
                 "cleaned_up": cleanup
             }
 
