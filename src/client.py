@@ -275,7 +275,7 @@ class MondayClient:
         documents: a mutation may already have been applied when a gateway returns 5xx,
         and resending it would create duplicates.
         """
-        waited = 0.0
+        start = time.monotonic()  # budget covers request time too, not just the sleeps
         for attempt in range(self.MAX_RETRIES + 1):
             try:
                 response = requests.post(url, **kwargs)
@@ -286,10 +286,9 @@ class MondayClient:
             if not retryable or attempt == self.MAX_RETRIES:
                 return response
             delay = self._retry_delay(response, attempt)
-            if waited + delay > self.MAX_TOTAL_RETRY_WAIT:
+            if time.monotonic() - start + delay > self.MAX_TOTAL_RETRY_WAIT:
                 return response  # give up rather than block the server for long
             time.sleep(delay)
-            waited += delay
         return response
 
     @staticmethod

@@ -273,6 +273,22 @@ class TestSecondReviewFixes(unittest.TestCase):
         self.assertIn("Rate limited", r["content"][0]["text"])
         self.assertLessEqual(sum(sleeps), MondayClient.MAX_TOTAL_RETRY_WAIT)
 
+    def test_retry_budget_counts_request_time(self):
+        clock = [0.0]
+
+        def slow_429(url, **kw):
+            clock[0] += 14.0  # each attempt takes 14s
+            r = MagicMock(status_code=429, headers={"Retry-After": "2"})
+            r.json.return_value = {"errors": [{"message": "rate limited"}]}
+            return r
+
+        with patch("requests.post", side_effect=slow_429) as mp, \
+                patch("time.sleep", side_effect=lambda s: clock.__setitem__(0, clock[0] + s)), \
+                patch("time.monotonic", side_effect=lambda: clock[0]):
+            r = self.call("get_me", {})
+        self.assertTrue(r["isError"])
+        self.assertEqual(mp.call_count, 1)
+
     def test_upload_retries_429_with_full_file(self):
         with tempfile.TemporaryDirectory() as d:
             d = os.path.realpath(d)
