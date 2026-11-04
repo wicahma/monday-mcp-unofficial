@@ -273,6 +273,12 @@ class TestSecondReviewFixes(unittest.TestCase):
         self.assertIn("Rate limited", r["content"][0]["text"])
         self.assertLessEqual(sum(sleeps), MondayClient.MAX_TOTAL_RETRY_WAIT)
 
+    def test_token_is_assignable(self):
+        client = MondayClient(token="a")
+        client.token = " b "
+        self.assertEqual(client.token, "b")
+        self.assertEqual(client._headers()["Authorization"], "b")
+
     def test_retry_budget_counts_request_time(self):
         clock = [0.0]
 

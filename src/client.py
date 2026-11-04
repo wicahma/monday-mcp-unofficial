@@ -257,6 +257,10 @@ class MondayClient:
                 or os.environ.get('MONDAY_API_TOKEN', '').strip()
                 or load_token())
 
+    @token.setter
+    def token(self, value: Optional[str]):
+        self._explicit_token = (value or '').strip() or None
+
     @staticmethod
     def _retry_delay(response: requests.Response, attempt: int) -> float:
         fallback = float(2 ** attempt)
