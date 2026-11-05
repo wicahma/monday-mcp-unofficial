@@ -1,6 +1,6 @@
 """
 Skill Testing & Validation Runner for Monday.com MCP Skills.
-Allows developers to test, inspect, and enhance all 13 agent skills
+Allows developers to test, inspect, and enhance all 19 agent skills
 individually (one by one) or in batch.
 """
 
@@ -163,7 +163,7 @@ class SkillValidator:
 
             with patch("requests.post", mock_post):
                 res = client.create_stage_card(
-                    board_id="5032042833",
+                    board_id="1234567890",
                     group_id=cfg["group"],
                     title=f"[{self.skill_name.upper()}] Test Card",
                     status="Working on it",
@@ -197,8 +197,8 @@ class SkillValidator:
                 "data": {"create_update": {"id": "up_123", "body": "Test comment"}}
             }
             with patch("requests.post", mock_post):
-                update_res = client.post_update(item_id="2886565907", body="Test update")
-                reply_res = client.reply_to_update(item_id="2886565907", parent_update_id="up_123", body="Test reply")
+                update_res = client.post_update(item_id="1234567890", body="Test update")
+                reply_res = client.reply_to_update(item_id="1234567890", parent_update_id="up_123", body="Test reply")
                 return {
                     "status": "PASS",
                     "post_update": update_res.get("id"),
@@ -209,7 +209,7 @@ class SkillValidator:
             mock_post = MagicMock()
             mock_post.return_value.status_code = 200
             mock_post.return_value.json.return_value = {
-                "data": {"boards": [{"id": "5032042833", "name": "My first project"}]}
+                "data": {"boards": [{"id": "1234567890", "name": "My first project"}]}
             }
             with patch("requests.post", mock_post):
                 boards_res = client.get_boards(limit=5)
@@ -308,7 +308,7 @@ class SkillValidator:
                 return {"status": "PASS", "update_id": up.get("id")}
 
         return {"status": "SKIPPED", "reason": "No specialized mock runner configured"}
-    def test_live_execution(self, board_id: str = "5032042833", cleanup: bool = True) -> Dict[str, Any]:
+    def test_live_execution(self, board_id: str, cleanup: bool = True) -> Dict[str, Any]:
         """Test skill execution live against the connected Monday.com workspace."""
         client = MondayClient()
         if not client.token:
@@ -317,8 +317,10 @@ class SkillValidator:
         if self.skill_name in STAGE_SKILLS_CONFIG:
             cfg = STAGE_SKILLS_CONFIG[self.skill_name]
             schema = client.get_board_schema(board_id)
-            groups = schema.get("groups", [])
-            target_group_id = groups[0]["id"] if groups else ""
+            group = next((g for g in schema.get("groups", []) if g.get("title") == cfg["group"]), None)
+            if not group:
+                return {"status": "FAIL", "error": f"Group '{cfg['group']}' not found on board {board_id}"}
+            target_group_id = group["id"]
 
             # Create live card
             title = f"[TEST][{self.skill_name.replace('monday-stage-', '').upper()}] Automated Skill Test Card"
@@ -332,7 +334,6 @@ class SkillValidator:
                 link="https://gitlab.example.com/test-pipeline"
             )
             item_id = created.get("id")
-            card_url = f"https://teguhdckusumas-team-company.monday.com/boards/{board_id}/pulses/{item_id}" if item_id else None
 
             # Clean up test card if requested
             if cleanup and item_id:
@@ -341,8 +342,8 @@ class SkillValidator:
             return {
                 "status": "PASS",
                 "live_card_id": item_id,
-                "card_url": card_url,
-                "verified_group": target_group_id,
+                "verified_group": cfg["group"],
+                "group_id": target_group_id,
                 "cleaned_up": cleanup
             }
 
@@ -384,7 +385,7 @@ def list_skills() -> List[str]:
     return skills
 
 
-def run_test_for_skill(skill_name: str, live: bool = False, board_id: str = "5032042833", cleanup: bool = True):
+def run_test_for_skill(skill_name: str, live: bool = False, board_id: Optional[str] = None, cleanup: bool = True):
     print(f"\n=======================================================")
     print(f"Testing Skill: {skill_name}")
     print(f"=======================================================")
@@ -427,10 +428,13 @@ def main():
     parser.add_argument("skill", nargs="?", default="all", help="Skill name to test (or 'all' / '--list')")
     parser.add_argument("--list", action="store_true", help="List all available skills")
     parser.add_argument("--live", action="store_true", help="Execute real queries/mutations against Monday API")
-    parser.add_argument("--board-id", default="5032042833", help="Target Board ID for live tests")
+    parser.add_argument("--board-id", help="Target Board ID for live tests (required with --live; use a scratch board)")
     parser.add_argument("--no-cleanup", action="store_true", help="Preserve created cards on Monday board without deleting")
     args = parser.parse_args()
     available_skills = list_skills()
+
+    if args.live and not args.board_id:
+        parser.error("--live requires --board-id. Live tests create real cards (and comments) on that board; use a scratch board.")
 
     if args.list:
         print("Available Monday Skills:")
