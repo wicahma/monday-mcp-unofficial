@@ -229,7 +229,7 @@ Since browser session tokens have an expiration period, you can easily renew the
 Built-in guards:
 - `all_api_read` only accepts GraphQL documents that contain query operations; any mutation or subscription is refused. Use `all_api_write` for mutations.
 - `add_file_to_update` resolves symlinks, refuses paths outside the allowed directories, only uploads allow-listed file extensions (see `MONDAY_UPLOAD_ALLOWED_EXTENSIONS`; archives, `.sql`, `.json` and `.yaml` are off by default because they can hide secrets), and always refuses credential-like files (`.env`, `*.pem`, `*.key`, `*.kdbx`, SSH keys, `.pgpass`, kubeconfigs, Terraform state, token files, anything under `.ssh`, `.aws`, `.config`, `.mozilla`, `.git`, `.omp`, ...).
-- Rate-limited requests (HTTP 429) are retried, waiting at most about 10 seconds in total so the server stays responsive. Server errors (5xx) are retried only for read-only queries, so a mutation is never sent twice.
+- Rate-limited requests (HTTP 429) are retried within a roughly 10 second budget that starts when the call begins and includes request time, so the server does not sit on a stalled call. Server errors (5xx) are retried only for read-only queries, so a mutation is never sent twice.
 - The stdio transport expects one JSON-RPC message per line, as the MCP spec requires. A malformed line gets a parse-error response and is discarded; it never affects the next message or stops the server.
 - Tools declare MCP annotations (`readOnlyHint`, `destructiveHint`) so clients can auto-approve reads and prompt for `delete_item` / `all_api_write`.
 - Tool failures are returned as `isError` results with a readable message, so the agent can recover.

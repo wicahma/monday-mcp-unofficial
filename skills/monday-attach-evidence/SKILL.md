@@ -12,7 +12,7 @@ Standardized skill to upload local files (test logs, screenshots, reports) to ca
 ## Standards
 - Professional engineering audit compliance.
 - **Zero emojis**.
-- Formats supported: PNG, JPG, PDF, TXT, LOG, JSON, ZIP.
+- Formats supported by default: PDF, images (PNG, JPG, JPEG, GIF, WEBP), TXT, LOG, MD, CSV, Office files, MP4, MOV.
 - Only attach files the user asked for. Check that logs and reports contain no secrets (tokens, passwords, connection strings) before uploading.
 
 ## Upload Restrictions (enforced by the server)
